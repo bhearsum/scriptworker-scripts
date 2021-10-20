@@ -1307,6 +1307,8 @@ async def sign_authenticode_file(context, orig_path, fmt, *, authenticode_commen
     else:
         digest_algo = "sha1"
 
+    cafile = context.config["authenticode_ca"]
+
     if keyid:
         certs = load_pem_certs(open(context.config[f"authenticode_cert_{keyid}"], "rb").read())
     else:
@@ -1334,6 +1336,7 @@ async def sign_authenticode_file(context, orig_path, fmt, *, authenticode_commen
         url=url,
         comment=authenticode_comment,
         crosscert=crosscert,
+        cafile=cafile,
         timestamp_style=timestamp_style,
     ):
         raise IOError(f"Couldn't sign {orig_path}")
