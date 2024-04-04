@@ -21,6 +21,8 @@ taskcluster_scope_prefixes:
         - 'project:xpi:beetmover:'
       'COT_PRODUCT == "mozillavpn"':
         - 'project:mozillavpn:releng:beetmover:'
+      'COT_PRODUCT == "translations':
+        - 'project:translations:releng:beetmover:'
 verbose: { "$eval": "VERBOSE == 'true'" }
 url_prefix:
   # we need to $merge as $match returns an array
@@ -223,6 +225,20 @@ clouds:
             enabled: True
             product_buckets:
               appservices: 'moz-fx-productdelivery-pr-38b5-productdelivery'
+        'COT_PRODUCT == "translations" && (ENV == "dev" || ENV == "fake-prod")':
+          dep:
+            credentials: { "$eval": "GCS_DEP_CREDS" }
+            fail_task_on_error: True
+            enabled: True
+            product_buckets:
+              translations: 'moz-fx-translations-data--5f91-stage-translations-data'
+        'COT_PRODUCT == "translations" && ENV == "prod"':
+          release:
+            credentials: { "$eval": "GCS_RELEASE_CREDS" }
+            fail_task_on_error: True
+            enabled: True
+            product_buckets:
+              translations: 'moz-fx-translations-data--303e-prod-translations-data'
 
   aws:
     $merge:

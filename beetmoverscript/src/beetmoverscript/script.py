@@ -273,6 +273,17 @@ async def push_to_maven(context):
     )
 
 
+def upload_translations_artifacts(context):
+    dryrun = context["payload"]["dryrun"]
+    upstreamArtifacts = context["payload"]["dryrun"]
+    artifactMap = context["payload"]["dryrun"]
+
+    artifacts_to_beetmove = scriptworker_artifacts.get_upstream_artifacts_full_paths_per_task_id
+    # TODO: probably need to make a fleshed out artifactMap based on the actual artifacts
+    # that scriptworker downloaded
+    move_beets(context, artifacts_to_beetmove, artifactMap)
+    
+
 # copy_beets {{{1
 def copy_beets(context, from_keys_checksums, to_keys_checksums):
     creds = get_credentials(context, "aws")
@@ -334,6 +345,7 @@ action_map = {
     "direct-push-to-bucket": direct_push_to_bucket,
     "push-to-maven": push_to_maven,
     "import-from-gcs-to-artifact-registry": import_from_gcs_to_artifact_registry,
+    "upload-translations-artifacts": upload_translations_artifacts,
 }
 
 
@@ -728,6 +740,7 @@ def main(config_path=None):
         "maven_schema_file": os.path.join(data_dir, "maven_beetmover_task_schema.json"),
         "artifactMap_schema_file": os.path.join(data_dir, "artifactMap_beetmover_task_schema.json"),
         "import_from_gcs_to_artifact_registry_schema_file": os.path.join(data_dir, "import_from_gcs_to_artifact_registry_task_schema.json"),
+        "upload_translations_artifacts": os.path.join(data_dir, "upload_translations_artifacts_task_schema.json"),
     }
 
     # There are several task schema. Validation occurs in async_main
