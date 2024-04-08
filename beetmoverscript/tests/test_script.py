@@ -616,3 +616,121 @@ def test_main(fake_session):
             main(config_path="tests/fake_config.json")
         except SystemExit as exc:
             assert exc.code == 1
+
+
+
+@pytest.mark.parametrize(
+    "upstream_artifacts,artifact_map",
+    (
+        # TODO: cases
+        # 
+        pytest.param(
+            {
+                "dep": [
+                ],
+            },
+            [
+                {
+                    "paths": {
+                        "": [
+                        ],
+                    },
+                },
+            ],
+            id="glob_only",
+        ),
+        pytest.param(
+            {
+                "dep": [
+                ],
+            },
+            [
+                {
+                    "paths": {
+                        "": [
+                        ],
+                    },
+                },
+            ],
+            id="glob_and_concrete",
+        ),
+        pytest.param(
+            {
+                "dep": [
+                ],
+            },
+            [
+                {
+                    "paths": {
+                        "": [
+                        ],
+                    },
+                },
+            ],
+            id="concrete_only",
+        ),
+        pytest.param(
+            {
+                "dep": [
+                ],
+            },
+            [
+                {
+                    "paths": {
+                        "": [
+                        ],
+                    },
+                },
+            ],
+            id="multiple_concrete",
+        ),
+        pytest.param(
+            {
+                "dep": [
+                ],
+            },
+            [
+                {
+                    "paths": {
+                        "": [
+                        ],
+                    },
+                },
+            ],
+            id="glob_suffix",
+        ),
+        pytest.param(
+            {
+                "dep": [
+                ],
+            },
+            [
+                {
+                    "paths": {
+                        "": [
+                        ],
+                    },
+                },
+            ],
+            id="multiple_glob_suffix_no_overlap",
+        ),
+        pytest.param(
+            {
+                "dep": [
+                ],
+            },
+            [
+                {
+                    "paths": {
+                        "": [
+                        ],
+                    },
+                },
+            ],
+            id="multiple_glob_suffix_with_overlap",
+        ),
+    )
+)
+def test_get_concrete_artifact_map_from_globbed():
+    # TODO: implement me
+    assert False

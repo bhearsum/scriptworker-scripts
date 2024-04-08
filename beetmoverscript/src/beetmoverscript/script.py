@@ -2,6 +2,7 @@
 """Beetmover script"""
 
 import asyncio
+import fnmatch
 import logging
 import mimetypes
 import os
@@ -273,6 +274,65 @@ async def push_to_maven(context):
     )
 
 
+def get_concrete_artifact_map_from_globbed(upstreamArtifacts, artifactMap):
+    # Sanity check inputs. Each file in upstreamArtifacts should match either:
+    # - One non "*" glob
+    # - A non "*" glob and "*" (in which case the former takes precedence)
+    # - "*" only
+    # Additionally, each destination should only have one matching artifact
+    # (ie: nothing should be overridden)
+
+    # First, find where each input path in the artifact map would place each
+    # upstream artifact
+    destination_matches = defaultdict(dict)
+    # TODO: upstreamArtifacts is keyed by taskid; may need to use that as well?
+    for artifact in upstreamArtifacts:
+        # TODO: is stripping this necessary, or is it already gone?
+        a = artifact.replace("public/build/", "")
+        # TODO: how to handle/identify cases where the same input_path apperas in multiple
+        # artifactMap entries?
+        for map_ in artifactMap:
+            for input_path, output in map_.items():
+                # Skip any input paths that don't match the artifact name.
+                if "*" in input_path:
+                    if not fnmatch.fnmatch(a, input_path):
+                        continue
+                else:
+                    if input_path != a:
+                        continue
+
+                for dest in output:
+                    destination_matches[a][input_path] = artifact
+
+    # a version of the input artifactMap with the globs translated to actual
+    # files
+    concreteArtifactMap = {}
+    errors = []
+    # Next, look for any destinations that appear more than once in a non-* pattern
+    for dest, matches in destination_matches.items():
+        concrete_matches = matches.copy()
+        if "*" in concrete_matches:
+            del concrete_matches["*"]
+        if len(concrete_matches) > 1:
+            errors.append(f"{dest} would be written to by multiple artifactMap entries")
+        
+        input_path = "*"
+        # concrete_matches has either 0 or 1 entries at this point
+        # If there is a concrete match use that
+        if concrete_matches:
+            concreteArtifactMap = concrete_matches.values()[0]
+        # If not, look for a "*" entry
+        else if "*" in matches:
+            concreteArtifactMap = matches["*"]
+        # If that's not there, we don't want the artifact
+
+    if errors:
+        # TODO: what type of exception? improve message
+        raise Exception(errors)
+
+    return concreteArtifactMap
+
+
 def upload_translations_artifacts(context):
     dryrun = context["payload"]["dryrun"]
     upstreamArtifacts = context["payload"]["dryrun"]
@@ -281,6 +341,7 @@ def upload_translations_artifacts(context):
     artifacts_to_beetmove = scriptworker_artifacts.get_upstream_artifacts_full_paths_per_task_id
     # TODO: probably need to make a fleshed out artifactMap based on the actual artifacts
     # that scriptworker downloaded
+    # TODO: do we need to set context.artifacts_to_beetmove ?
     move_beets(context, artifacts_to_beetmove, artifactMap)
     
 
