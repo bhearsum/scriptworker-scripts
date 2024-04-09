@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-"""Beetmover script
-"""
+"""Beetmover script"""
+
 import asyncio
 import logging
 import mimetypes
@@ -260,8 +260,9 @@ def copy_beets(context, from_keys_checksums, to_keys_checksums):
                 # compare md5
                 if from_keys_checksums[source] != to_keys_checksums[destination]:
                     raise ScriptWorkerTaskException(
-                        "{} already exists with different content "
-                        "(src etag: {}, dest etag: {}), aborting".format(destination, from_keys_checksums[source], to_keys_checksums[destination])
+                        "{} already exists with different content " "(src etag: {}, dest etag: {}), aborting".format(
+                            destination, from_keys_checksums[source], to_keys_checksums[destination]
+                        )
                     )
                 else:
                     log.warning("{} already exists with the same content ({}), " "skipping copy".format(destination, to_keys_checksums[destination]))
