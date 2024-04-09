@@ -285,32 +285,36 @@ def get_concrete_artifact_map_from_globbed(artifactsToBeetmove, artifactMap):
 
     # First, find where each input path in the artifact map would place each
     # upstream artifact
-    destination_matches = defaultdict(dict)
-    # TODO: artifactsToBeetmove is keyed by taskid; may need to use that as well?
-    for artifact in artifactsToBeetmove:
-        # TODO: is stripping this necessary, or is it already gone?
-        a = artifact.replace("public/build/", "")
-        # TODO: how to handle/identify cases where the same input_path apperas in multiple
-        # artifactMap entries?
-        for map_ in artifactMap:
-            for input_path, output in map_.items():
-                # Skip any input paths that don't match the artifact name.
-                if "*" in input_path:
-                    if not fnmatch.fnmatch(a, input_path):
-                        continue
-                else:
-                    if input_path != a:
-                        continue
+    destination_matches = defaultdict(list)
+    for taskId, artifacts in artifactsToBeetmove.items():
+        for artifact in artifacts:
+            # TODO: is stripping this necessary, or is it already gone?
+            # a = artifact.replace("public/build/", "")
+            a = artifact
+            # TODO: how to handle/identify cases where the same input_path apperas in multiple
+            # artifactMap entries?
+            for map_ in artifactMap:
+                if map_["taskId"] != taskId:
+                    continue
 
-                for dest in output:
-                    destination_matches[a][input_path] = artifact
+                for input_path, output in map_["paths"].items():
+                    # Skip any input paths that don't match the artifact name.
+                    if "*" in input_path:
+                        if not fnmatch.fnmatch(os.path.basename(a), input_path):
+                            continue
+                    else:
+                        if input_path != a:
+                            continue
+
+                    for dest in output["destinations"]:
+                        destination_matches[dest].append(a)
 
     # a version of the input artifactMap with the globs translated to actual
     # files
     concreteArtifactMap = {}
     errors = []
     # Next, look for any destinations that appear more than once in a non-* pattern
-    for dest, matches in destination_matches.items():
+    for dest, sources in destination_matches.items():
         concrete_matches = matches.copy()
         if "*" in concrete_matches:
             del concrete_matches["*"]
@@ -321,14 +325,13 @@ def get_concrete_artifact_map_from_globbed(artifactsToBeetmove, artifactMap):
         # concrete_matches has either 0 or 1 entries at this point
         # If there is a concrete match use that
         if concrete_matches:
-            concreteArtifactMap = concrete_matches.values()[0]
+            concreteArtifactMap[dest] = list(concrete_matches.values())[0]
         # If not, look for a "*" entry
         elif "*" in matches:
-            concreteArtifactMap = matches["*"]
+            concreteArtifactMap[dest] = matches["*"]
         # If that's not there, we don't want the artifact
 
     if errors:
-        # TODO: what type of exception? improve message
         raise ScriptWorkerTaskException(errors)
 
     return concreteArtifactMap
