@@ -144,7 +144,7 @@ def is_maven_action(action):
     return action in MAVEN_ACTIONS
 
 
-def is_upload_translations_action(action):
+def is_upload_translations_artifacts_action(action):
     return action in TRANSLATIONS_ACTIONS
 
 
