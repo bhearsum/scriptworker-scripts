@@ -17,6 +17,7 @@ from beetmoverscript.script import (
     copy_beets,
     enrich_balrog_manifest,
     get_destination_for_partner_repack_path,
+    get_concrete_artifact_map_from_globbed,
     list_bucket_objects,
     main,
     move_beet,
@@ -620,117 +621,312 @@ def test_main(fake_session):
 
 
 @pytest.mark.parametrize(
-    "upstream_artifacts,artifact_map",
+    "artifacts_to_beetmove,artifact_map,concrete_artifact_map,error",
     (
         # TODO: cases
         # 
         pytest.param(
             {
-                "dep": [
+                "dep1": [
+                    "public/build/foo",
+                    "public/build/bar",
                 ],
             },
             [
                 {
                     "paths": {
-                        "": [
-                        ],
+                        "*": {"destinations": [
+                            "some/dir/",
+                            ]},
                     },
+                    "taskId": "dep1",
                 },
             ],
+            [
+                {
+                    "paths": {
+                        "public/build/foo": {"destinations": [
+                            "some/dir/foo",
+                        ]},
+                        "public/build/bar": {"destinations": [
+                            "some/dir/bar",
+                        ]},
+                    },
+                    "taskId": "dep1",
+                },
+            ],
+            "",
             id="glob_only",
         ),
         pytest.param(
             {
-                "dep": [
+                "dep1": [
+                    "public/build/foo",
+                    "public/build/bar",
+                    "public/build/live.log",
                 ],
             },
             [
                 {
                     "paths": {
-                        "": [
-                        ],
+                        "public/build/foo": {"destinations": [
+                            "some/dir/foo",
+                        ]},
+                        "*.log": {"destinations": [
+                            "some/log/dir/",
+                        ]},
                     },
+                    "taskId": "dep1",
                 },
             ],
-            id="glob_and_concrete",
+            [
+                {
+                    "paths": {
+                        "public/build/foo": {"destinations": [
+                            "some/dir/foo",
+                        ]},
+                        "public/build/live.log": {"destinations": [
+                            "some/log/dir/live.log",
+                        ]},
+                    },
+                    "taskId": "dep1",
+                },
+            ],
+            "",
+            id="glob_and_nonglob",
         ),
         pytest.param(
             {
-                "dep": [
+                "dep1": [
+                    "public/build/foo",
+                    "public/build/bar",
+                    "public/build/live.log",
                 ],
             },
             [
                 {
                     "paths": {
-                        "": [
-                        ],
+                        "public/build/foo": {"destinations": [
+                            "some/dir/foo",
+                        ]},
                     },
+                    "taskId": "dep1",
                 },
             ],
-            id="concrete_only",
+            [
+                {
+                    "paths": {
+                        "public/build/foo": {"destinations": [
+                            "some/dir/foo",
+                        ]},
+                    },
+                    "taskId": "dep1",
+                },
+            ],
+            "",
+            id="nonglob_only",
         ),
         pytest.param(
             {
-                "dep": [
+                "dep1": [
+                    "public/build/foo",
+                    "public/build/bar",
+                    "public/build/live.log",
                 ],
             },
             [
                 {
                     "paths": {
-                        "": [
-                        ],
+                        "public/build/foo": {"destinations": [
+                            "some/dir/foo",
+                        ]},
+                        "public/build/bar": {"destinations": [
+                            "some/dir/bar",
+                        ]},
                     },
+                    "taskId": "dep1",
                 },
             ],
-            id="multiple_concrete",
+            [
+                {
+                    "paths": {
+                        "public/build/foo": {"destinations": [
+                            "some/dir/foo",
+                        ]},
+                        "public/build/bar": {"destinations": [
+                            "some/dir/bar",
+                        ]},
+                    },
+                    "taskId": "dep1",
+                },
+            ],
+            "",
+            id="multiple_nonglob",
         ),
         pytest.param(
             {
-                "dep": [
+                "dep1": [
+                    "public/build/foo",
+                    "public/build/bar",
+                    "public/build/live.log",
                 ],
             },
             [
                 {
                     "paths": {
-                        "": [
-                        ],
+                        "*.log": {"destinations": [
+                            "some/log/dir",
+                        ]},
                     },
+                    "taskId": "dep1",
                 },
             ],
+            [
+                {
+                    "paths": {
+                        "public/build/live.log": {"destinations": [
+                            "some/log/dir",
+                        ]},
+                    },
+                    "taskId": "dep1",
+                },
+            ],
+            "",
             id="glob_suffix",
         ),
         pytest.param(
             {
-                "dep": [
+                "dep1": [
+                    "public/build/foo",
+                    "public/build/bar",
+                    "public/build/live.log",
+                    "public/build/test.txt",
                 ],
             },
             [
                 {
                     "paths": {
-                        "": [
-                        ],
+                        "*.log": {"destinations": [
+                            "some/log/dir/",
+                        ]},
+                        "*.txt": {"destinations": [
+                            "some/txt/dir/",
+                        ]},
+                        "*": {"destinations": [
+                            "some/dir/",
+                        ]},
                     },
+                    "taskId": "dep1",
                 },
             ],
+            [
+                {
+                    "paths": {
+                        "public/build/live.log": {"destinations": [
+                            "some/log/dir/live.log",
+                        ]},
+                        "public/build/test.txt": {"destinations": [
+                            "some/txt/dir/test.txt",
+                        ]},
+                        "public/build/foo": {"destinations": [
+                            "some/dir/foo",
+                        ]},
+                        "public/build/bar": {"destinations": [
+                            "some/dir/bar",
+                        ]},
+                    },
+                    "taskId": "dep1",
+                },
+            ],
+            "",
             id="multiple_glob_suffix_no_overlap",
         ),
         pytest.param(
             {
-                "dep": [
+                "dep1": [
+                    "public/build/deeply/nested/foo",
+                    "public/build/deeply/nested/bar",
                 ],
             },
             [
                 {
                     "paths": {
-                        "": [
-                        ],
+                        "*": {"destinations": [
+                            "some/dir/",
+                        ]},
                     },
+                    "taskId": "dep1",
                 },
             ],
+            [
+                {
+                    "paths": {
+                        "public/build/foo": {"destinations": [
+                            "some/dir/deeply/nested/foo",
+                        ]},
+                        "public/build/bar": {"destinations": [
+                            "some/dir/deeply/nested/bar",
+                        ]},
+                    },
+                    "taskId": "dep1",
+                },
+            ],
+            "",
+            id="glob_with_subdir",
+        ),
+        pytest.param(
+            {
+                "dep1": [
+                    "public/build/live.log",
+                ],
+            },
+            [
+                # TODO: do we want to support this at all?
+                {
+                    "paths": {
+                        "*.log": {"destinations": [
+                            "some/log/dir/",
+                        ]},
+                        "*og": {"destinations": [
+                            "some/og/dir/",
+                        ]},
+                    },
+                    "taskId": "dep1",
+                },
+            ],
+            [],
+            "'live.log' matched multiple concrete paths",
             id="multiple_glob_suffix_with_overlap",
+        ),
+        pytest.param(
+            {
+                "dep1": [
+                    "public/build/live.log",
+                    "public/build/sub/live.log",
+                ],
+            },
+            [
+                {
+                    "paths": {
+                        "*.log": {"destinations": [
+                            "some/log/dir/",
+                        ]},
+                    },
+                    "taskId": "dep1",
+                },
+            ],
+            [],
+            "'some/log/dir/live.log' would be written to by multiple artifactMap entries",
+            id="multiple_source_for_one_dest",
         ),
     )
 )
-def test_get_concrete_artifact_map_from_globbed():
-    # TODO: implement me
-    assert False
+def test_get_concrete_artifact_map_from_globbed(artifacts_to_beetmove, artifact_map, concrete_artifact_map, error):
+    try:
+        got = get_concrete_artifact_map_from_globbed(artifacts_to_beetmove, artifact_map)
+        assert got == concrete_artifact_map
+    except ScriptWorkerTaskException as e:
+        if error:
+            assert error in e.args[0]
+        else:
+            assert False, "Unexpected exception"

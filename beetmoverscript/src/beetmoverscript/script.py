@@ -8,6 +8,7 @@ import mimetypes
 import os
 import re
 import sys
+from collections import defaultdict
 from multiprocessing.pool import ThreadPool
 
 import aiohttp
@@ -274,8 +275,8 @@ async def push_to_maven(context):
     )
 
 
-def get_concrete_artifact_map_from_globbed(upstreamArtifacts, artifactMap):
-    # Sanity check inputs. Each file in upstreamArtifacts should match either:
+def get_concrete_artifact_map_from_globbed(artifactsToBeetmove, artifactMap):
+    # Sanity check inputs. Each file in artifactsToBeetmove should match either:
     # - One non "*" glob
     # - A non "*" glob and "*" (in which case the former takes precedence)
     # - "*" only
@@ -285,8 +286,8 @@ def get_concrete_artifact_map_from_globbed(upstreamArtifacts, artifactMap):
     # First, find where each input path in the artifact map would place each
     # upstream artifact
     destination_matches = defaultdict(dict)
-    # TODO: upstreamArtifacts is keyed by taskid; may need to use that as well?
-    for artifact in upstreamArtifacts:
+    # TODO: artifactsToBeetmove is keyed by taskid; may need to use that as well?
+    for artifact in artifactsToBeetmove:
         # TODO: is stripping this necessary, or is it already gone?
         a = artifact.replace("public/build/", "")
         # TODO: how to handle/identify cases where the same input_path apperas in multiple
@@ -322,27 +323,25 @@ def get_concrete_artifact_map_from_globbed(upstreamArtifacts, artifactMap):
         if concrete_matches:
             concreteArtifactMap = concrete_matches.values()[0]
         # If not, look for a "*" entry
-        else if "*" in matches:
+        elif "*" in matches:
             concreteArtifactMap = matches["*"]
         # If that's not there, we don't want the artifact
 
     if errors:
         # TODO: what type of exception? improve message
-        raise Exception(errors)
+        raise ScriptWorkerTaskException(errors)
 
     return concreteArtifactMap
 
 
 def upload_translations_artifacts(context):
     dryrun = context["payload"]["dryrun"]
-    upstreamArtifacts = context["payload"]["dryrun"]
-    artifactMap = context["payload"]["dryrun"]
+    artifactMap = context["payload"]["artifactMap"]
 
-    artifacts_to_beetmove = scriptworker_artifacts.get_upstream_artifacts_full_paths_per_task_id
-    # TODO: probably need to make a fleshed out artifactMap based on the actual artifacts
-    # that scriptworker downloaded
+    artifactsToBeetmove = scriptworker_artifacts.get_upstream_artifacts_full_paths_per_task_id(context)
+    concreteArtifactMap = get_concrete_artifact_map_from_globbed(artifactsToBeetmove, artifactMap)
     # TODO: do we need to set context.artifacts_to_beetmove ?
-    move_beets(context, artifacts_to_beetmove, artifactMap)
+    move_beets(context, artifactsToBeetmove, concreteArtifactMap)
     
 
 # copy_beets {{{1
