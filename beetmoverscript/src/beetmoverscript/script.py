@@ -327,20 +327,22 @@ def get_concrete_artifact_map_from_globbed(upstreamArtifactPaths, artifactMap):
                 continue
 
             for artifact in artifacts:
-                artifact_basename = os.path.basename(artifact)
+                retained_artifact_path = artifact[artifact.find("public/build/") + len("public/build/"):]
                 destinations = []
                 # We need to look at non-'*' paths separate from '*' paths.
 
                 for input_path, output in other_paths.items():
                     # Skip any input paths that don't match the artifact name.
                     if "*" in input_path:
-                        if not fnmatch.fnmatch(artifact_basename, input_path):
+                        if not fnmatch.fnmatch(retained_artifact_path, input_path):
                             continue
                     else:
                         if input_path != artifact:
                             continue
 
-                    if artifact in concretePaths:
+                    # If there's already destinations, we've already seen this artifact,
+                    # and we have a clash.
+                    if destinations:
                         errors.append(f"'{artifact}' matched multiple concrete paths")
                     else:
                         destinations.extend(output["destinations"])
@@ -349,14 +351,14 @@ def get_concrete_artifact_map_from_globbed(upstreamArtifactPaths, artifactMap):
                 # If we have destinations for the "*" glob any artifacts that
                 # aren't accounted for by any of the `other_paths` will go to
                 # the "*" destinations.
-                if full_glob_destinations and artifact not in concretePaths:
+                if full_glob_destinations and not destinations:
                     destinations.extend(full_glob_destinations)
                 
                 if destinations:
                     concretePaths[artifact] = {"destinations": []}
                     for d in destinations:
-                        if not d.endswith(artifact_basename):
-                            d = f"{d.rstrip('/')}/{artifact_basename}"
+                        if not d.endswith(retained_artifact_path):
+                            d = f"{d.rstrip('/')}/{retained_artifact_path}"
                         concretePaths[artifact]["destinations"].append(d)
 
         concreteArtifactMap.append({

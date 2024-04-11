@@ -784,7 +784,7 @@ def test_main(fake_session):
                 {
                     "paths": {
                         "/path/to/cot/dir/dep1/public/build/live.log": {"destinations": [
-                            "some/log/dir",
+                            "some/log/dir/live.log",
                         ]},
                     },
                     "taskId": "dep1",
@@ -860,10 +860,10 @@ def test_main(fake_session):
             [
                 {
                     "paths": {
-                        "/path/to/cot/dir/dep1/public/build/foo": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/deeply/nested/foo": {"destinations": [
                             "some/dir/deeply/nested/foo",
                         ]},
-                        "/path/to/cot/dir/dep1/public/build/bar": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/deeply/nested/bar": {"destinations": [
                             "some/dir/deeply/nested/bar",
                         ]},
                     },
@@ -894,7 +894,7 @@ def test_main(fake_session):
                 },
             ],
             [],
-            "'live.log' matched multiple concrete paths",
+            "'/path/to/cot/dir/dep1/public/build/live.log' matched multiple concrete paths",
             id="multiple_glob_suffix_with_overlap",
         ),
         # TODO: test case with multiple errors
