@@ -225,14 +225,16 @@ clouds:
             enabled: True
             product_buckets:
               appservices: 'moz-fx-productdelivery-pr-38b5-productdelivery'
-        'COT_PRODUCT == "translations" && (ENV == "dev" || ENV == "fake-prod")':
+        'COT_PRODUCT == "translations" && ENV == "dev"':
           dep:
             credentials: { "$eval": "GCS_DEP_CREDS" }
             fail_task_on_error: True
             enabled: True
             product_buckets:
               translations: 'moz-fx-translations-data--5f91-stage-translations-data'
-        'COT_PRODUCT == "translations" && ENV == "prod"':
+        # TODO: after translations production training moves off of level 1 workers
+        # fake-prod should be configured like dev
+        'COT_PRODUCT == "translations" && (ENV == "fake-prod" || ENV == "prod")':
           release:
             credentials: { "$eval": "GCS_RELEASE_CREDS" }
             fail_task_on_error: True
