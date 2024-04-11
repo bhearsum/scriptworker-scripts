@@ -17,6 +17,7 @@ import boto3
 from botocore.exceptions import ClientError
 from redo import retry
 from scriptworker import client
+from scriptworker import artifacts as scriptworker_artifacts
 from scriptworker.exceptions import (
     ScriptWorkerRetryException,
     ScriptWorkerTaskException,
@@ -390,12 +391,16 @@ def ensure_no_overwrites_in_artifact_map(artifactMap):
     return False
 
 def upload_translations_artifacts(context):
-    dryrun = context["payload"]["dryrun"]
-    artifactMap = context["payload"]["artifactMap"]
+    dryrun = context.task["payload"]["dryrun"]
+    artifactMap = context.task["payload"]["artifactMap"]
 
-    upstreamArtifactPaths = scriptworker_artifacts.get_upstream_artifacts_full_paths_per_task_id(context)
+    # Ignore any failed artifacts; we'll take whatever we can get. All artifacts are considered optional.
+    upstreamArtifactPaths = scriptworker_artifacts.get_upstream_artifacts_full_paths_per_task_id(context)[0]
     concreteArtifactMap = get_concrete_artifact_map_from_globbed(upstreamArtifactPaths, artifactMap)
-    # fuck it, just call `retry_upload` yourself - move_beets is too fucking stupid
+
+    for map_ in concreteArtifactMap:
+        for input_path, outputs in map_["paths"].items():
+            retry_upload(context, outputs["destinations"], input_path)
     
 
 # copy_beets {{{1
