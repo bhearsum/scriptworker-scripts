@@ -16,6 +16,7 @@ from beetmoverscript.script import (
     async_main,
     copy_beets,
     enrich_balrog_manifest,
+    ensure_no_overwrites_in_artifact_map,
     get_destination_for_partner_repack_path,
     get_concrete_artifact_map_from_globbed,
     list_bucket_objects,
@@ -897,30 +898,7 @@ def test_main(fake_session):
             "'/path/to/cot/dir/dep1/public/build/live.log' matched multiple concrete paths",
             id="multiple_glob_suffix_with_overlap",
         ),
-        # TODO: test case with multiple errors
 
-        # TODO: this check should happen in a separate function
-#        pytest.param(
-#            {
-#                "dep1": [
-#                    "/path/to/cot/dir/dep1/public/build/live.log",
-#                    "/path/to/cot/dir/dep1/public/build/sub/live.log",
-#                ],
-#            },
-#            [
-#                {
-#                    "paths": {
-#                        "*.log": {"destinations": [
-#                            "some/log/dir/",
-#                        ]},
-#                    },
-#                    "taskId": "dep1",
-#                },
-#            ],
-#            [],
-#            "'some/log/dir/live.log' would be written to by multiple artifactMap entries",
-#            id="multiple_source_for_one_dest",
-#        ),
     )
 )
 def test_get_concrete_artifact_map_from_globbed(upstream_artifact_paths, artifact_map, concrete_artifact_map, error):
@@ -930,5 +908,79 @@ def test_get_concrete_artifact_map_from_globbed(upstream_artifact_paths, artifac
     except ScriptWorkerTaskException as e:
         if error:
             assert error in e.args[0]
+        else:
+            assert False, "Unexpected exception"
+
+
+@pytest.mark.parametrize(
+    "artifact_map,errors",
+    (
+        pytest.param(
+            [
+               {
+                   "paths": {
+                       "/path/to/cot/dir/dep1/public/build/foo": {"destinations": [
+                           "some/dir/foo",
+                       ]},
+                       "/path/to/cot/dir/dep1/public/build/bar": {"destinations": [
+                           "some/dir/bar",
+                       ]},
+                   },
+                   "taskId": "dep1",
+               },
+            ],
+            (),
+            id="no_overwrites",
+        ),
+        pytest.param(
+            [
+               {
+                   "paths": {
+                       "/path/to/cot/dir/dep1/public/build/foo": {"destinations": [
+                           "some/dir/foo",
+                       ]},
+                       "/path/to/cot/dir/dep1/public/build/deeply/nested/foo": {"destinations": [
+                           "some/dir/foo",
+                       ]},
+                   },
+                   "taskId": "dep1",
+               },
+            ],
+            ("'some/dir/foo' would be written to more than once",),
+            id="one_overwrite",
+        ),
+        pytest.param(
+            [
+               {
+                   "paths": {
+                       "/path/to/cot/dir/dep1/public/build/foo": {"destinations": [
+                           "some/dir/foo",
+                       ]},
+                       "/path/to/cot/dir/dep1/public/build/deeply/nested/foo": {"destinations": [
+                           "some/dir/foo",
+                       ]},
+                       "/path/to/cot/dir/dep1/public/build/bar": {"destinations": [
+                           "some/dir/bar",
+                       ]},
+                       "/path/to/cot/dir/dep1/public/build/deeply/nested/bar": {"destinations": [
+                           "some/dir/bar",
+                       ]},
+                   },
+                   "taskId": "dep1",
+               },
+            ],
+            ("'some/dir/foo' would be written to more than once", "'some/dir/bar' would be written to more than once"),
+            id="multiple_overwrites",
+        ),
+    )
+)
+def test_ensure_no_overwrites_in_artifact_map(artifact_map, errors):
+    try:
+        got = ensure_no_overwrites_in_artifact_map(artifact_map)
+        if errors:
+            assert False, f"Expected errors: {errors}"
+    except ScriptWorkerTaskException as e:
+        if errors:
+            assert e.args == errors
         else:
             assert False, "Unexpected exception"

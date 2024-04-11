@@ -367,10 +367,27 @@ def get_concrete_artifact_map_from_globbed(upstreamArtifactPaths, artifactMap):
         })
 
     if errors:
-        raise ScriptWorkerTaskException(errors)
+        raise ScriptWorkerTaskException(*errors)
 
     return concreteArtifactMap
 
+
+def ensure_no_overwrites_in_artifact_map(artifactMap):
+    dest_counts = defaultdict(int)
+    for map_ in artifactMap:
+        for output_path in map_["paths"].values():
+            for dest in output_path["destinations"]:
+                dest_counts[dest] += 1
+
+    errors = []
+    for dest, count in dest_counts.items():
+        if count > 1:
+            errors.append(f"'{dest}' would be written to more than once")
+
+    if errors:
+        raise ScriptWorkerTaskException(*errors)
+
+    return False
 
 def upload_translations_artifacts(context):
     dryrun = context["payload"]["dryrun"]
