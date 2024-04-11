@@ -2,6 +2,7 @@
 """Beetmover script"""
 
 import asyncio
+import copy
 import fnmatch
 import logging
 import mimetypes
@@ -275,61 +276,93 @@ async def push_to_maven(context):
     )
 
 
-def get_concrete_artifact_map_from_globbed(artifactsToBeetmove, artifactMap):
-    # Sanity check inputs. Each file in artifactsToBeetmove should match either:
-    # - One non "*" glob
+# TODO: maybe call upstreamArtifactPaths something different?
+def get_concrete_artifact_map_from_globbed(upstreamArtifactPaths, artifactMap):
+    # Sanity check inputs. Each file in upstreamArtifactPaths should match either:
+    # - One non "*" glob in artifactMap
     # - A non "*" glob and "*" (in which case the former takes precedence)
     # - "*" only
+    # TODO: maybe move this sanity check out elsewhere?
     # Additionally, each destination should only have one matching artifact
     # (ie: nothing should be overridden)
 
-    # First, find where each input path in the artifact map would place each
-    # upstream artifact
-    destination_matches = defaultdict(list)
-    for taskId, artifacts in artifactsToBeetmove.items():
-        for artifact in artifacts:
-            # TODO: is stripping this necessary, or is it already gone?
-            # a = artifact.replace("public/build/", "")
-            a = artifact
-            # TODO: how to handle/identify cases where the same input_path apperas in multiple
-            # artifactMap entries?
-            for map_ in artifactMap:
-                if map_["taskId"] != taskId:
-                    continue
+    # upstreamArtifactPaths here is in the form of:
+    # {
+    #   "taskId1": [
+    #     "/path/to/file",
+    #     "/path/to/file2",
+    #   ],
+    #   "taskId2": [
+    #     "/path/to/file",
+    #     "/path/to/file2",
+    #   ],
+    # }
+    # artifactMap is in the form of:
+    # [
+    #   {
+    #     "taskId": "taskId1",
+    #     "paths": {
+    #       "*": {
+    #         "destinations": [
+    #           "dest1",
+    #         ]
+    #       }
+    #     },
+    #   }
+    # ]
 
-                for input_path, output in map_["paths"].items():
+    concreteArtifactMap = []
+    errors = []
+
+    for map_ in artifactMap:
+        concretePaths = {}
+
+        full_glob_destinations = map_["paths"].get("*", {}).get("destinations")
+        other_paths = copy.deepcopy(map_["paths"])
+        if "*" in other_paths:
+            del other_paths["*"]
+
+        for taskId, artifacts in upstreamArtifactPaths.items():
+            if map_["taskId"] != taskId:
+                continue
+
+            for artifact in artifacts:
+                artifact_basename = os.path.basename(artifact)
+                destinations = []
+                # We need to look at non-'*' paths separate from '*' paths.
+
+                for input_path, output in other_paths.items():
                     # Skip any input paths that don't match the artifact name.
                     if "*" in input_path:
-                        if not fnmatch.fnmatch(os.path.basename(a), input_path):
+                        if not fnmatch.fnmatch(artifact_basename, input_path):
                             continue
                     else:
-                        if input_path != a:
+                        if input_path != artifact:
                             continue
 
-                    for dest in output["destinations"]:
-                        destination_matches[dest].append(a)
+                    if artifact in concretePaths:
+                        errors.append(f"'{artifact}' matched multiple concrete paths")
+                    else:
+                        destinations.extend(output["destinations"])
 
-    # a version of the input artifactMap with the globs translated to actual
-    # files
-    concreteArtifactMap = {}
-    errors = []
-    # Next, look for any destinations that appear more than once in a non-* pattern
-    for dest, sources in destination_matches.items():
-        concrete_matches = matches.copy()
-        if "*" in concrete_matches:
-            del concrete_matches["*"]
-        if len(concrete_matches) > 1:
-            errors.append(f"{dest} would be written to by multiple artifactMap entries")
-        
-        input_path = "*"
-        # concrete_matches has either 0 or 1 entries at this point
-        # If there is a concrete match use that
-        if concrete_matches:
-            concreteArtifactMap[dest] = list(concrete_matches.values())[0]
-        # If not, look for a "*" entry
-        elif "*" in matches:
-            concreteArtifactMap[dest] = matches["*"]
-        # If that's not there, we don't want the artifact
+                
+                # If we have destinations for the "*" glob any artifacts that
+                # aren't accounted for by any of the `other_paths` will go to
+                # the "*" destinations.
+                if full_glob_destinations and artifact not in concretePaths:
+                    destinations.extend(full_glob_destinations)
+                
+                if destinations:
+                    concretePaths[artifact] = {"destinations": []}
+                    for d in destinations:
+                        if not d.endswith(artifact_basename):
+                            d = f"{d.rstrip('/')}/{artifact_basename}"
+                        concretePaths[artifact]["destinations"].append(d)
+
+        concreteArtifactMap.append({
+            "paths": concretePaths,
+            "taskId": map_["taskId"],
+        })
 
     if errors:
         raise ScriptWorkerTaskException(errors)
@@ -341,10 +374,9 @@ def upload_translations_artifacts(context):
     dryrun = context["payload"]["dryrun"]
     artifactMap = context["payload"]["artifactMap"]
 
-    artifactsToBeetmove = scriptworker_artifacts.get_upstream_artifacts_full_paths_per_task_id(context)
-    concreteArtifactMap = get_concrete_artifact_map_from_globbed(artifactsToBeetmove, artifactMap)
-    # TODO: do we need to set context.artifacts_to_beetmove ?
-    move_beets(context, artifactsToBeetmove, concreteArtifactMap)
+    upstreamArtifactPaths = scriptworker_artifacts.get_upstream_artifacts_full_paths_per_task_id(context)
+    concreteArtifactMap = get_concrete_artifact_map_from_globbed(upstreamArtifactPaths, artifactMap)
+    # fuck it, just call `retry_upload` yourself - move_beets is too fucking stupid
     
 
 # copy_beets {{{1

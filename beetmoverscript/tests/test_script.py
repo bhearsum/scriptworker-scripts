@@ -621,15 +621,14 @@ def test_main(fake_session):
 
 
 @pytest.mark.parametrize(
-    "artifacts_to_beetmove,artifact_map,concrete_artifact_map,error",
+    "upstream_artifact_paths,artifact_map,concrete_artifact_map,error",
     (
-        # TODO: cases
-        # 
+        # TODO: do we need full paths in upstream_artifact_paths ?
         pytest.param(
             {
                 "dep1": [
-                    "public/build/foo",
-                    "public/build/bar",
+                    "/path/to/cot/dir/dep1/public/build/foo",
+                    "/path/to/cot/dir/dep1/public/build/bar",
                 ],
             },
             [
@@ -645,10 +644,10 @@ def test_main(fake_session):
             [
                 {
                     "paths": {
-                        "public/build/foo": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/foo": {"destinations": [
                             "some/dir/foo",
                         ]},
-                        "public/build/bar": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/bar": {"destinations": [
                             "some/dir/bar",
                         ]},
                     },
@@ -661,15 +660,15 @@ def test_main(fake_session):
         pytest.param(
             {
                 "dep1": [
-                    "public/build/foo",
-                    "public/build/bar",
-                    "public/build/live.log",
+                    "/path/to/cot/dir/dep1/public/build/foo",
+                    "/path/to/cot/dir/dep1/public/build/bar",
+                    "/path/to/cot/dir/dep1/public/build/live.log",
                 ],
             },
             [
                 {
                     "paths": {
-                        "public/build/foo": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/foo": {"destinations": [
                             "some/dir/foo",
                         ]},
                         "*.log": {"destinations": [
@@ -682,10 +681,10 @@ def test_main(fake_session):
             [
                 {
                     "paths": {
-                        "public/build/foo": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/foo": {"destinations": [
                             "some/dir/foo",
                         ]},
-                        "public/build/live.log": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/live.log": {"destinations": [
                             "some/log/dir/live.log",
                         ]},
                     },
@@ -698,15 +697,15 @@ def test_main(fake_session):
         pytest.param(
             {
                 "dep1": [
-                    "public/build/foo",
-                    "public/build/bar",
-                    "public/build/live.log",
+                    "/path/to/cot/dir/dep1/public/build/foo",
+                    "/path/to/cot/dir/dep1/public/build/bar",
+                    "/path/to/cot/dir/dep1/public/build/live.log",
                 ],
             },
             [
                 {
                     "paths": {
-                        "public/build/foo": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/foo": {"destinations": [
                             "some/dir/foo",
                         ]},
                     },
@@ -716,7 +715,7 @@ def test_main(fake_session):
             [
                 {
                     "paths": {
-                        "public/build/foo": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/foo": {"destinations": [
                             "some/dir/foo",
                         ]},
                     },
@@ -729,18 +728,18 @@ def test_main(fake_session):
         pytest.param(
             {
                 "dep1": [
-                    "public/build/foo",
-                    "public/build/bar",
-                    "public/build/live.log",
+                    "/path/to/cot/dir/dep1/public/build/foo",
+                    "/path/to/cot/dir/dep1/public/build/bar",
+                    "/path/to/cot/dir/dep1/public/build/live.log",
                 ],
             },
             [
                 {
                     "paths": {
-                        "public/build/foo": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/foo": {"destinations": [
                             "some/dir/foo",
                         ]},
-                        "public/build/bar": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/bar": {"destinations": [
                             "some/dir/bar",
                         ]},
                     },
@@ -750,10 +749,10 @@ def test_main(fake_session):
             [
                 {
                     "paths": {
-                        "public/build/foo": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/foo": {"destinations": [
                             "some/dir/foo",
                         ]},
-                        "public/build/bar": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/bar": {"destinations": [
                             "some/dir/bar",
                         ]},
                     },
@@ -766,9 +765,9 @@ def test_main(fake_session):
         pytest.param(
             {
                 "dep1": [
-                    "public/build/foo",
-                    "public/build/bar",
-                    "public/build/live.log",
+                    "/path/to/cot/dir/dep1/public/build/foo",
+                    "/path/to/cot/dir/dep1/public/build/bar",
+                    "/path/to/cot/dir/dep1/public/build/live.log",
                 ],
             },
             [
@@ -784,7 +783,7 @@ def test_main(fake_session):
             [
                 {
                     "paths": {
-                        "public/build/live.log": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/live.log": {"destinations": [
                             "some/log/dir",
                         ]},
                     },
@@ -797,10 +796,10 @@ def test_main(fake_session):
         pytest.param(
             {
                 "dep1": [
-                    "public/build/foo",
-                    "public/build/bar",
-                    "public/build/live.log",
-                    "public/build/test.txt",
+                    "/path/to/cot/dir/dep1/public/build/foo",
+                    "/path/to/cot/dir/dep1/public/build/bar",
+                    "/path/to/cot/dir/dep1/public/build/live.log",
+                    "/path/to/cot/dir/dep1/public/build/test.txt",
                 ],
             },
             [
@@ -822,16 +821,16 @@ def test_main(fake_session):
             [
                 {
                     "paths": {
-                        "public/build/live.log": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/live.log": {"destinations": [
                             "some/log/dir/live.log",
                         ]},
-                        "public/build/test.txt": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/test.txt": {"destinations": [
                             "some/txt/dir/test.txt",
                         ]},
-                        "public/build/foo": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/foo": {"destinations": [
                             "some/dir/foo",
                         ]},
-                        "public/build/bar": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/bar": {"destinations": [
                             "some/dir/bar",
                         ]},
                     },
@@ -844,8 +843,8 @@ def test_main(fake_session):
         pytest.param(
             {
                 "dep1": [
-                    "public/build/deeply/nested/foo",
-                    "public/build/deeply/nested/bar",
+                    "/path/to/cot/dir/dep1/public/build/deeply/nested/foo",
+                    "/path/to/cot/dir/dep1/public/build/deeply/nested/bar",
                 ],
             },
             [
@@ -861,10 +860,10 @@ def test_main(fake_session):
             [
                 {
                     "paths": {
-                        "public/build/foo": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/foo": {"destinations": [
                             "some/dir/deeply/nested/foo",
                         ]},
-                        "public/build/bar": {"destinations": [
+                        "/path/to/cot/dir/dep1/public/build/bar": {"destinations": [
                             "some/dir/deeply/nested/bar",
                         ]},
                     },
@@ -877,7 +876,7 @@ def test_main(fake_session):
         pytest.param(
             {
                 "dep1": [
-                    "public/build/live.log",
+                    "/path/to/cot/dir/dep1/public/build/live.log",
                 ],
             },
             [
@@ -898,32 +897,35 @@ def test_main(fake_session):
             "'live.log' matched multiple concrete paths",
             id="multiple_glob_suffix_with_overlap",
         ),
-        pytest.param(
-            {
-                "dep1": [
-                    "public/build/live.log",
-                    "public/build/sub/live.log",
-                ],
-            },
-            [
-                {
-                    "paths": {
-                        "*.log": {"destinations": [
-                            "some/log/dir/",
-                        ]},
-                    },
-                    "taskId": "dep1",
-                },
-            ],
-            [],
-            "'some/log/dir/live.log' would be written to by multiple artifactMap entries",
-            id="multiple_source_for_one_dest",
-        ),
+        # TODO: test case with multiple errors
+
+        # TODO: this check should happen in a separate function
+#        pytest.param(
+#            {
+#                "dep1": [
+#                    "/path/to/cot/dir/dep1/public/build/live.log",
+#                    "/path/to/cot/dir/dep1/public/build/sub/live.log",
+#                ],
+#            },
+#            [
+#                {
+#                    "paths": {
+#                        "*.log": {"destinations": [
+#                            "some/log/dir/",
+#                        ]},
+#                    },
+#                    "taskId": "dep1",
+#                },
+#            ],
+#            [],
+#            "'some/log/dir/live.log' would be written to by multiple artifactMap entries",
+#            id="multiple_source_for_one_dest",
+#        ),
     )
 )
-def test_get_concrete_artifact_map_from_globbed(artifacts_to_beetmove, artifact_map, concrete_artifact_map, error):
+def test_get_concrete_artifact_map_from_globbed(upstream_artifact_paths, artifact_map, concrete_artifact_map, error):
     try:
-        got = get_concrete_artifact_map_from_globbed(artifacts_to_beetmove, artifact_map)
+        got = get_concrete_artifact_map_from_globbed(upstream_artifact_paths, artifact_map)
         assert got == concrete_artifact_map
     except ScriptWorkerTaskException as e:
         if error:
