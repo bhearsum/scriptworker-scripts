@@ -1,5 +1,6 @@
 #!/bin/bash
 set -o errexit -o pipefail
+set -x
 
 test_var_set() {
   local varname=$1
