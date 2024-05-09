@@ -55,6 +55,8 @@ url_prefix:
         dep: 'https://ftp.stage.mozaws.net'
       'COT_PRODUCT == "mozillavpn" && ENV == "prod"':
         release: 'https://archive.mozilla.org'
+      'COT_PRODUCT == "translations"':
+        dep: 'unused'
 
 clouds:
   gcloud:
@@ -505,3 +507,21 @@ clouds:
               key: { "$eval": "RELEASE_KEY" }
             product_buckets:
               vpn: 'net-mozaws-prod-delivery-archive'
+
+        'COT_PRODUCT == "translations" && ENV == "dev"':
+          dep:
+            fail_task_on_error: True
+            enabled: False
+            credentials:
+              id: 'unused'
+              key: 'unused'
+            product_buckets: {}
+
+        'COT_PRODUCT == "translations" && (ENV == "fake-prod" || ENV == "prod")':
+          release:
+            fail_task_on_error: True
+            enabled: False
+            credentials:
+              id: 'unused'
+              key: 'unused'
+            product_buckets: {}
