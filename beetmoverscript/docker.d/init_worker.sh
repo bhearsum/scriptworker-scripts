@@ -145,17 +145,21 @@ case $COT_PRODUCT in
     esac
     ;;
   translations)
-    case $ENV in)
+    case $ENV in
       dev)
         test_var_set 'GCS_DEP_CREDS'
+        ;;
       # Note: when https://github.com/mozilla/firefox-translations-training/issues/375 is completed
       # the fake-prod workers should be switch to the same creds as dev, and production creds
       # should live on L3 (or whatever level we end up using) workers only.
       fake-prod|prod)
         test_var_set 'GCS_RELEASE_CREDS'
+        ;;
       *)
         exit 1
         ;;
+    esac
+    ;;
   *)
     exit 1
     ;;
