@@ -2,6 +2,8 @@
 set -o errexit -o pipefail
 set -x
 
+echo "bhearsum"
+
 test_var_set() {
   local varname=$1
 
