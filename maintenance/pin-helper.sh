@@ -14,7 +14,7 @@ else
 fi
 
 for dir in $DIRS; do
-    ARGS="$EXTRA_ARGS -g base -g test -g local"
+    ARGS="$EXTRA_ARGS"
     if [ "$dir" = "pushflatpakscript" ]; then
         ARGS="$ARGS -g flat-manager"
     fi
@@ -23,7 +23,7 @@ for dir in $DIRS; do
     fi
     echo $ARGS
     pushd "$dir"
-    pip-compile-multi --backtracking -u -o "$SUFFIX" $ARGS
+    pip-compile-multi --backtracking -u
     chmod 644 requirements/*.txt
     popd
 done
