@@ -1,5 +1,6 @@
 #!/bin/bash
 set -o errexit -o pipefail
+set -x
 
 test_var_set() {
   local varname=$1
@@ -152,6 +153,9 @@ case $COT_PRODUCT in
       # should live on L3 (or whatever level we end up using) workers only.
       fake-prod|prod)
         test_var_set 'GCS_RELEASE_CREDS'
+      *)
+        exit 1
+        ;;
   *)
     exit 1
     ;;
