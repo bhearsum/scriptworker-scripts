@@ -21,7 +21,7 @@ taskcluster_scope_prefixes:
         - 'project:xpi:beetmover:'
       'COT_PRODUCT == "mozillavpn"':
         - 'project:mozillavpn:releng:beetmover:'
-      'COT_PRODUCT == "translations':
+      'COT_PRODUCT == "translations"':
         - 'project:translations:releng:beetmover:'
 verbose: { "$eval": "VERBOSE == 'true'" }
 url_prefix:
