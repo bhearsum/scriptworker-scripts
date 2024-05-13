@@ -24,7 +24,7 @@ pyproject-api==1.6.1
     # via tox
 tox==4.15.0
     # via -r requirements/local.in
-virtualenv==20.26.1
+virtualenv==20.26.2
     # via tox
 
 # The following packages are considered to be unsafe in a requirements file:
